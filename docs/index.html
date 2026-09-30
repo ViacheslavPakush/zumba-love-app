@@ -1,11 +1,139 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Studio</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Dance LOVE Rhythm</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-<body style="background:#0B0B0C;color:#D4B483;font-family:sans-serif;text-align:center;padding-top:40vh">
-  <h1>💃 Студія працює!</h1>
+<body>
+  <main class="app">
+
+    <!-- Шапка -->
+    <header class="header">
+      <div>
+        <p class="eyebrow" id="todayLabel">Сьогодні</p>
+        <h1 class="title">Привіт, <span id="userName">кохана</span></h1>
+      </div>
+      <div class="streak">
+        <span>🔥</span>
+        <span class="streak__value" id="streakValue">0</span>
+      </div>
+    </header>
+
+    <!-- Статистика -->
+    <section class="stats">
+      <article class="stat stat--accent">
+        <span class="stat__value" id="kcalValue">0</span>
+        <span class="stat__label">ккал</span>
+      </article>
+      <article class="stat">
+        <span class="stat__value" id="minValue">0</span>
+        <span class="stat__label">хвилин</span>
+      </article>
+      <article class="stat">
+        <span class="stat__value" id="totalValue">0</span>
+        <span class="stat__label">всього</span>
+      </article>
+    </section>
+
+    <!-- Прогрес до сюрпризу -->
+    <section class="goal">
+      <div class="goal__head">
+        <span>До сюрпризу 🎁</span>
+        <strong id="goalText">0 / 5</strong>
+      </div>
+      <div class="goal__bar">
+        <div class="goal__fill" id="goalFill" style="--progress: 0%"></div>
+      </div>
+    </section>
+
+    <!-- Тиждень -->
+    <section class="week" id="week">
+      <div class="day"><span>Пн</span><span class="day__num">28</span></div>
+      <div class="day"><span>Вт</span><span class="day__num">29</span></div>
+      <div class="day is-today"><span>Ср</span><span class="day__num">30</span></div>
+      <div class="day"><span>Чт</span><span class="day__num">1</span></div>
+      <div class="day"><span>Пт</span><span class="day__num">2</span></div>
+      <div class="day"><span>Сб</span><span class="day__num">3</span></div>
+      <div class="day"><span>Нд</span><span class="day__num">4</span></div>
+    </section>
+
+    <!-- Тренування -->
+    <section>
+      <div class="section-head">
+        <h2>Тренування</h2>
+        <span>4 програми</span>
+      </div>
+      <div class="workouts">
+        <button class="card" data-id="zumba" data-video="videos/zumba.mp4" data-kcal="300" data-min="30">
+          <span class="card__num">01</span>
+          <span class="card__body">
+            <span class="card__title">Зумба</span>
+            <span class="card__meta">30 хв · 300 ккал · Кардіо</span>
+          </span>
+          <span class="card__arrow">→</span>
+        </button>
+        <button class="card" data-id="bachata" data-video="videos/bachata.mp4" data-kcal="200" data-min="25">
+          <span class="card__num">02</span>
+          <span class="card__body">
+            <span class="card__title">Бачата</span>
+            <span class="card__meta">25 хв · 200 ккал · Пластика</span>
+          </span>
+          <span class="card__arrow">→</span>
+        </button>
+        <button class="card" data-id="reggaeton" data-video="videos/reggaeton.mp4" data-kcal="320" data-min="30">
+          <span class="card__num">03</span>
+          <span class="card__body">
+            <span class="card__title">Реггетон</span>
+            <span class="card__meta">30 хв · 320 ккал · Інтенсив</span>
+          </span>
+          <span class="card__arrow">→</span>
+        </button>
+        <button class="card" data-id="stretch" data-video="videos/stretch.mp4" data-kcal="90" data-min="15">
+          <span class="card__num">04</span>
+          <span class="card__body">
+            <span class="card__title">Розтяжка</span>
+            <span class="card__meta">15 хв · 90 ккал · Відновлення</span>
+          </span>
+          <span class="card__arrow">→</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Кнопка масажу -->
+    <button class="massage" id="massageBtn">
+      <span class="massage__icon">💆‍♀️</span>
+      <span class="massage__text">
+        <strong>Масаж від коханого</strong>
+        <small>Натисни, і він уже знає ❤️</small>
+      </span>
+    </button>
+
+  </main>
+
+  <!-- Відеоплеєр -->
+  <dialog class="player" id="player">
+    <div class="player__inner">
+      <header class="player__head">
+        <h3 id="playerTitle">Тренування</h3>
+        <button class="icon-btn" id="playerClose">✕</button>
+      </header>
+      <video id="playerVideo" controls playsinline preload="none"></video>
+      <button class="btn-primary" id="doneBtn">Я потренувалась ✓</button>
+    </div>
+  </dialog>
+
+  <!-- Сюрприз (поки прихований) -->
+  <div class="surprise" id="surprise" hidden>
+    <div class="confetti" id="confetti"></div>
+    <div class="surprise__card">
+      <div class="surprise__emoji">🎁</div>
+      <h2 class="surprise__title">5 днів поспіль!</h2>
+      <p class="surprise__text">Ти неймовірна. На тебе чекає романтичний подарунок від мене… ❤️</p>
+      <button class="btn-primary" id="surpriseClose">Хочу дізнатися 😍</button>
+    </div>
+  </div>
 </body>
 </html>
