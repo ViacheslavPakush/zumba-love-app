@@ -30,3 +30,30 @@ function renderWeek() {
   }
 }
 renderWeek();
+
+// 3. Відеоплеєр: відкривається при натисканні на картку
+const player = document.getElementById('player');
+const playerTitle = document.getElementById('playerTitle');
+const playerVideo = document.getElementById('playerVideo');
+
+document.querySelectorAll('.card').forEach((card) => {
+  card.addEventListener('click', () => {
+    playerTitle.textContent = card.querySelector('.card__title').textContent;
+    playerVideo.src = card.dataset.video;   // беремо адресу відео з data-video
+    player.showModal();                      // відкриваємо вікно
+    tg?.HapticFeedback?.impactOccurred('light'); // легка вібрація
+  });
+});
+
+// Закриття: хрестик ✕ або натискання на темний фон
+document.getElementById('playerClose').addEventListener('click', () => player.close());
+player.addEventListener('click', (e) => {
+  if (e.target === player) player.close();
+});
+
+// Коли вікно закрилось, зупиняємо відео
+player.addEventListener('close', () => {
+  playerVideo.pause();
+  playerVideo.removeAttribute('src');
+  playerVideo.load();
+});
