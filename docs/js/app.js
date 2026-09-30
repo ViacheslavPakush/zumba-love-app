@@ -5,16 +5,12 @@ const tg = window.Telegram?.WebApp;
 tg?.ready();
 tg?.expand(); // відкрити на весь екран
 
-// 1. Ім'я з Telegram у привітанні
-const name = tg?.initDataUnsafe?.user?.first_name;
-if (name) document.getElementById('userName').textContent = name;
-
-// 2. Сьогоднішня дата вгорі
+// 1. Сьогоднішня дата вгорі
 const today = new Date();
 document.getElementById('todayLabel').textContent =
   today.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
 
-// 3. Тиждень: будується автоматично від понеділка
+// 2. Тиждень: будується автоматично від понеділка
 function renderWeek() {
   const week = document.getElementById('week');
   const names = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
