@@ -1,0 +1,177 @@
+/* 1. Кольори та розміри: вся тема в одному місці */
+:root {
+  --bg: #0B0B0C;
+  --surface: #151517;
+  --surface-2: #1E1E21;
+  --line: rgba(255,255,255,.08);
+  --text: #F5F5F4;
+  --muted: #8A8A8E;
+  --accent: #D4B483;
+  --rose: #E7A1B0;
+  --radius: 20px;
+  --radius-sm: 14px;
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 2. Скидання стандартних стилів */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 15px; line-height: 1.4;
+  -webkit-font-smoothing: antialiased; min-height: 100vh;
+}
+button {
+  font: inherit; color: inherit; background: none; border: 0;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+
+/* 3. Контейнер */
+.app {
+  max-width: 480px; margin: 0 auto;
+  padding: 20px 20px calc(32px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+/* 4. Шапка */
+.header { display: flex; justify-content: space-between; align-items: flex-end; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.title { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.title span { color: var(--accent); }
+.streak {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+}
+.streak__value { font-weight: 600; }
+
+/* 5. Статистика */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat {
+  display: flex; flex-direction: column; gap: 4px; padding: 14px 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.stat__value { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat__label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.stat--accent .stat__value { color: var(--accent); }
+
+/* 6. Прогрес до сюрпризу */
+.goal { display: flex; flex-direction: column; gap: 10px; }
+.goal__head { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.goal__head strong { color: var(--text); font-weight: 500; }
+.goal__bar { height: 4px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.goal__fill {
+  height: 100%; width: var(--progress, 0%);
+  background: linear-gradient(90deg, var(--rose), var(--accent));
+  border-radius: inherit; transition: width .8s var(--ease);
+}
+
+/* 7. Тиждень */
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.day { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.day__num {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--line); font-size: 14px; color: var(--text);
+}
+.day.is-done .day__num { background: var(--accent); color: #111; border-color: transparent; }
+.day.is-today { color: var(--text); }
+.day.is-today .day__num { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--rose); }
+
+/* 8. Картки тренувань */
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.section-head h2 { font-size: 18px; font-weight: 600; }
+.section-head span { font-size: 13px; color: var(--muted); }
+.workouts { display: flex; flex-direction: column; gap: 10px; }
+.card {
+  position: relative; display: flex; align-items: center; gap: 16px;
+  width: 100%; padding: 22px 20px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+  transition: transform .2s var(--ease);
+}
+.card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .16;
+  background: radial-gradient(120% 90% at 100% 0%, var(--card-accent) 0%, transparent 55%);
+}
+.card[data-id="zumba"]     { --card-accent: #FF7A59; }
+.card[data-id="bachata"]   { --card-accent: #E7A1B0; }
+.card[data-id="reggaeton"] { --card-accent: #D4B483; }
+.card[data-id="stretch"]   { --card-accent: #8FB8A8; }
+.card:active { transform: scale(.98); }
+.card__num { font-size: 13px; color: var(--muted); }
+.card__body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.card__title { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.card__meta { font-size: 13px; color: var(--muted); }
+.card__arrow {
+  width: 38px; height: 38px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--line);
+}
+.card.is-done .card__arrow { background: var(--accent); color: #111; border-color: transparent; }
+
+/* 9. Кнопка масажу */
+.massage {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  padding: 18px 20px; text-align: left; border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(231,161,176,.14), rgba(212,180,131,.08));
+  border: 1px solid rgba(231,161,176,.25);
+  transition: transform .2s var(--ease), opacity .2s;
+}
+.massage:active { transform: scale(.98); }
+.massage:disabled { opacity: .5; }
+.massage__icon { font-size: 30px; animation: heartbeat 2.4s ease-in-out infinite; }
+.massage__text strong { display: block; font-weight: 600; }
+.massage__text small { font-size: 13px; color: var(--muted); }
+@keyframes heartbeat {
+  0%, 40%, 100% { transform: scale(1); }
+  10% { transform: scale(1.14); }
+  30% { transform: scale(1.08); }
+}
+
+/* 10. Відеоплеєр */
+.player {
+  width: 100%; max-width: 480px; margin: auto auto 0;
+  padding: 0; border: 0; background: transparent; color: var(--text);
+}
+.player::backdrop { background: rgba(0,0,0,.7); backdrop-filter: blur(6px); }
+.player[open] { animation: sheet-up .4s var(--ease); }
+.player__inner {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  background: var(--surface); border-radius: 24px 24px 0 0;
+}
+.player__head { display: flex; justify-content: space-between; align-items: center; }
+.player__head h3 { font-size: 20px; font-weight: 600; }
+.player video { width: 100%; aspect-ratio: 16/9; border-radius: var(--radius-sm); background: #000; }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+.icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); }
+.btn-primary {
+  width: 100%; padding: 16px; border-radius: var(--radius-sm);
+  background: var(--text); color: var(--bg); font-weight: 600;
+}
+.btn-primary:active { transform: scale(.98); }
+
+/* 11. Сюрприз + конфеті */
+.surprise {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  padding: 24px; background: rgba(11,11,12,.85); backdrop-filter: blur(8px);
+  animation: fade .4s ease;
+}
+.surprise[hidden] { display: none; }
+.surprise__card {
+  position: relative; z-index: 2; max-width: 340px;
+  display: flex; flex-direction: column; gap: 12px; padding: 32px 24px;
+  text-align: center; background: var(--surface);
+  border: 1px solid rgba(212,180,131,.3); border-radius: 24px;
+  animation: pop .6s cubic-bezier(.2,1.4,.4,1);
+}
+.surprise__emoji { font-size: 52px; }
+.surprise__title { font-size: 24px; font-weight: 600; color: var(--accent); }
+.surprise__text { color: var(--muted); margin-bottom: 8px; }
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti i {
+  position: absolute; top: -20px; left: var(--x);
+  width: 8px; height: 14px; background: var(--c); border-radius: 2px;
+  animation: fall var(--d, 3s) linear var(--delay, 0s) infinite;
+}
+@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(.8); } }
