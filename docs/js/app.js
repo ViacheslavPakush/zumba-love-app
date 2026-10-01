@@ -1,5 +1,5 @@
 // Dance LOVE Rhythm
-// Плеєр, таймер заняття, локальна історія тренувань
+// Бібліотека відео, плеєр, таймер і локальна історія
 
 const tg = window.Telegram?.WebApp;
 tg?.ready();
@@ -13,15 +13,12 @@ const LIMIT_MS = 60 * 60 * 1000;
 const MIN_WORKOUT_MS = 10 * 60 * 1000;
 const STORAGE_KEY = 'danceLoveRhythm.training.v1';
 
-// Пізніше вкажемо шлях до запису твоїм голосом.
-// Наприклад: 'audio/workout-finished.mp3'
+// Пізніше додамо шлях до запису твоїм голосом.
 const FINISH_VOICE_URL = '';
 
-const youtube = {
-  zumba:
-    'https://www.youtube.com/embed/1FFwfdlAdco' +
-    '?start=0&end=865&playsinline=1&rel=0'
-};
+// workouts.js має бути підключений перед app.js.
+const workoutCatalog =
+  typeof WORKOUTS !== 'undefined' ? WORKOUTS : {};
 
 // --------------------------------------------------
 // 2. Допоміжні функції
@@ -77,6 +74,21 @@ function emptyState() {
     history: [],
     message: ''
   };
+}
+
+function closeOnBackdrop(dialog) {
+  dialog.addEventListener('click', (event) => {
+    if (event.target !== dialog) return;
+
+    const rect = dialog.getBoundingClientRect();
+    const outside =
+      event.clientX < rect.left ||
+      event.clientX > rect.right ||
+      event.clientY < rect.top ||
+      event.clientY > rect.bottom;
+
+    if (outside) dialog.close();
+  });
 }
 
 // --------------------------------------------------
@@ -169,6 +181,10 @@ const playerTitle = document.getElementById('playerTitle');
 const playerVideo = document.getElementById('playerVideo');
 const doneBtn = document.getElementById('doneBtn');
 
+const library = document.getElementById('library');
+const libraryTitle = document.getElementById('libraryTitle');
+const workoutList = document.getElementById('workoutList');
+
 const elapsedLabels =
   document.querySelectorAll('[data-session-elapsed]');
 
@@ -182,7 +198,7 @@ const sessionStatuses =
   document.querySelectorAll('[data-session-status]');
 
 // --------------------------------------------------
-// 5. YouTube-плеєр
+// 5. Відеоплеєр
 // --------------------------------------------------
 
 const playerYoutube = document.createElement('iframe');
@@ -204,6 +220,7 @@ playerYoutube.style.cssText = `
 `;
 
 playerVideo.before(playerYoutube);
+playerVideo.hidden = true;
 
 function stopPlayback() {
   playerVideo.pause();
@@ -220,77 +237,143 @@ function closePlayer() {
   if (player.open) player.close();
 }
 
-document.querySelectorAll('.card').forEach((card) => {
-  card.addEventListener('click', () => {
-    if (card.disabled) return;
-
-    checkLimit();
-
-    const s = state.session;
-
-    if (s?.finished && s.elapsedMs >= LIMIT_MS) {
-      state.message =
-        'Заняття завершено. Для наступного натисни «Нове тренування».';
-      saveState();
-      renderTimer();
-
-      document.getElementById('sessionTitle')?.scrollIntoView({
-        block: 'center'
-      });
-
-      return;
-    }
-
-    stopPlayback();
-
-    playerTitle.textContent =
-      card.querySelector('.card__title').textContent;
-
-    const youtubeUrl = youtube[card.dataset.id];
-
-    if (youtubeUrl) {
-      playerYoutube.title =
-        `Тренування: ${playerTitle.textContent}`;
-
-      playerYoutube.src = youtubeUrl;
-      playerYoutube.style.display = 'block';
-    } else if (card.dataset.video) {
-      playerVideo.hidden = false;
-      playerVideo.src = card.dataset.video;
-    } else {
-      return;
-    }
-
-    player.showModal();
-    player.scrollTop = 0;
-    tg?.HapticFeedback?.impactOccurred('light');
-  });
-});
-
 document.getElementById('playerClose')
   .addEventListener('click', closePlayer);
-
-function closeOnBackdrop(dialog) {
-  dialog.addEventListener('click', (event) => {
-    if (event.target !== dialog) return;
-
-    const rect = dialog.getBoundingClientRect();
-
-    const outside =
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom;
-
-    if (outside) dialog.close();
-  });
-}
 
 closeOnBackdrop(player);
 player.addEventListener('close', stopPlayback);
 
 // --------------------------------------------------
-// 6. Сигнал завершення
+// 6. Вибір відео всередині напрямів
+// --------------------------------------------------
+
+function canOpenWorkout() {
+  checkLimit();
+
+  const s = state.session;
+
+  if (s?.finished && s.elapsedMs >= LIMIT_MS) {
+    state.message =
+      'Заняття завершено. Для наступного натисни «Нове тренування».';
+
+    saveState();
+    renderTimer();
+
+    if (library.open) library.close();
+
+    document.getElementById('sessionTitle')?.scrollIntoView({
+      block: 'center'
+    });
+
+    return false;
+  }
+
+  return true;
+}
+
+function openSelectedWorkout(workout) {
+  if (!canOpenWorkout()) return;
+
+  stopPlayback();
+
+  if (library.open) library.close();
+
+  playerTitle.textContent = workout.title;
+  playerYoutube.title = `Тренування: ${workout.title}`;
+
+  const url = new URL(
+    `https://www.youtube.com/embed/${workout.youtubeId}`
+  );
+
+  url.searchParams.set('start', String(workout.start ?? 0));
+  url.searchParams.set('playsinline', '1');
+  url.searchParams.set('rel', '0');
+
+  // Якщо end: null — показуємо відео до завершення.
+  if (Number.isFinite(workout.end)) {
+    url.searchParams.set('end', String(workout.end));
+  }
+
+  playerYoutube.src = url.toString();
+  playerYoutube.style.display = 'block';
+
+  player.showModal();
+  player.scrollTop = 0;
+
+  tg?.HapticFeedback?.impactOccurred('light');
+}
+
+function renderWorkoutList(videos) {
+  workoutList.replaceChildren();
+
+  videos.forEach((workout, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'card';
+    button.style.setProperty('--card-accent', '#D4B483');
+
+    const number = document.createElement('span');
+    number.className = 'card__num';
+    number.textContent = String(index + 1).padStart(2, '0');
+
+    const body = document.createElement('span');
+    body.className = 'card__body';
+
+    const title = document.createElement('span');
+    title.className = 'card__title';
+    title.textContent = workout.title;
+
+    const duration = document.createElement('span');
+    duration.className = 'card__meta';
+
+    duration.textContent = Number.isFinite(workout.end)
+      ? formatTime(
+          Math.max(0, workout.end - (workout.start ?? 0)) * 1000
+        )
+      : 'Повне відео';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'card__arrow';
+    arrow.textContent = '→';
+    arrow.setAttribute('aria-hidden', 'true');
+
+    body.append(title, duration);
+    button.append(number, body, arrow);
+
+    button.addEventListener('click', () => {
+      openSelectedWorkout(workout);
+    });
+
+    workoutList.appendChild(button);
+  });
+}
+
+document.querySelectorAll('.workouts > .card').forEach((card) => {
+  const videos = workoutCatalog[card.dataset.id] ?? [];
+
+  // Активуємо всі напрями, для яких є відео.
+  card.disabled = videos.length === 0;
+
+  card.addEventListener('click', () => {
+    if (card.disabled || !canOpenWorkout()) return;
+
+    libraryTitle.textContent =
+      card.querySelector('.card__title').textContent;
+
+    renderWorkoutList(videos);
+
+    library.showModal();
+    library.scrollTop = 0;
+  });
+});
+
+document.getElementById('libraryClose')
+  .addEventListener('click', () => library.close());
+
+closeOnBackdrop(library);
+
+// --------------------------------------------------
+// 7. Сигнал завершення
 // --------------------------------------------------
 
 let audioContext = null;
@@ -343,7 +426,10 @@ function speakFinish() {
     return;
   }
 
-  if (!('speechSynthesis' in window)) return;
+  if (
+    !('speechSynthesis' in window) ||
+    !('SpeechSynthesisUtterance' in window)
+  ) return;
 
   const speech = new SpeechSynthesisUtterance(
     'Ваше тренування завершене'
@@ -375,7 +461,6 @@ function playFinishAlarm() {
   if (audioContext?.state === 'running') {
     const start = audioContext.currentTime;
 
-    // Три короткі сигнали.
     for (let i = 0; i < 3; i++) {
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -402,11 +487,12 @@ function playFinishAlarm() {
     }
   }
 
+  clearTimeout(voiceDelay);
   voiceDelay = setTimeout(speakFinish, 1300);
 }
 
 // --------------------------------------------------
-// 7. Вікно статистики
+// 8. Вікно статистики
 // --------------------------------------------------
 
 const historyButton = document.createElement('button');
@@ -532,7 +618,7 @@ function renderHistory() {
 }
 
 // --------------------------------------------------
-// 8. Дата, календар, стрік і підсумки
+// 9. Дата, календар, стрік і підсумки
 // --------------------------------------------------
 
 let renderedDay = '';
@@ -541,8 +627,6 @@ function calculateStreak(completedDays) {
   const cursor = new Date();
   cursor.setHours(12, 0, 0, 0);
 
-  // Якщо сьогодні ще немає заняття,
-  // учорашній стрік залишається чинним.
   if (!completedDays.has(dayKey(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -631,7 +715,7 @@ function renderDashboard() {
 }
 
 // --------------------------------------------------
-// 9. Завершення заняття
+// 10. Завершення заняття
 // --------------------------------------------------
 
 function finishSession(atLimit = false) {
@@ -645,7 +729,6 @@ function finishSession(atLimit = false) {
   s.finished = true;
 
   if (duration >= MIN_WORKOUT_MS) {
-    // Захист від повторного додавання того самого заняття.
     if (!state.history.some((record) => record.id === s.id)) {
       state.history.push({
         id: s.id,
@@ -664,10 +747,11 @@ function finishSession(atLimit = false) {
       'Менше 10 хв — до статистики не додано.';
   }
 
-  // Історію і стан заняття зберігаємо разом.
   saveState();
 
   closePlayer();
+  if (library.open) library.close();
+
   renderDashboard();
   renderTimer();
 
@@ -689,13 +773,11 @@ function checkLimit() {
 }
 
 // --------------------------------------------------
-// 10. Відображення таймера
+// 11. Відображення таймера
 // --------------------------------------------------
 
 function renderTimer() {
   const s = state.session;
-
-  // Після завершення лічильники готові до нового заняття.
   const elapsed = !s || s.finished ? 0 : elapsedMs();
 
   const seconds = Math.floor(elapsed / 1000);
@@ -751,7 +833,7 @@ function renderTimer() {
 }
 
 // --------------------------------------------------
-// 11. Початок, пауза, продовження
+// 12. Початок, пауза, продовження
 // --------------------------------------------------
 
 sessionButtons.forEach((button) => {
@@ -760,7 +842,6 @@ sessionButtons.forEach((button) => {
 
     const current = state.session;
 
-    // Якщо ліміт щойно настав — спочатку завершуємо заняття.
     if (
       current &&
       !current.finished &&
@@ -812,7 +893,7 @@ doneBtn.addEventListener('click', () => {
 });
 
 // --------------------------------------------------
-// 12. Оновлення без накопичення похибки
+// 13. Оновлення
 // --------------------------------------------------
 
 function refreshApp() {
@@ -828,8 +909,8 @@ function refreshApp() {
 renderDashboard();
 refreshApp();
 
+// Інтервал лише перемальовує екран.
 // Час обчислюється за часовими мітками.
-// Інтервал лише оновлює екран.
 setInterval(refreshApp, 500);
 
 document.addEventListener('visibilitychange', () => {
